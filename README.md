@@ -40,3 +40,53 @@ The development of this testing platform aims to provide testers with an efficie
 - Improve the select method
 - Add the function of adding test report after completing the test
 - Publish all updates to code Repo (upgrade the version to beta 1.0 after the update is completed)
+
+##### Example
+
+```javascript
+// ==UserScript==
+// @name        FAT_trace_start
+// @namespace   Violentmonkey Scripts
+// @match       *://*/*
+// @require     https://raw.githubusercontent.com/AllenShielder1994/FAT/main/FAT.js
+// @grant       none
+// @version     1.0
+// @author      -
+// @description 8/16/2024, 5:43:52 PM
+// ==/UserScript==
+
+const btnStart =
+  'document.querySelector("body > eui-container").shadowRoot.querySelector("main > div > div > div.content > e-application-trace").shadowRoot.querySelector("div > eui-tabs > div:nth-child(2) > e-cnom-application-trace-session").shadowRoot.querySelector("div > eui-multi-panel-tile > div.table-action-container > eui-button:nth-child(1)")';
+const nodeType =
+  'document.querySelector("body > eui-container").shadowRoot.querySelector("main > div > div > div.content > e-application-trace").shadowRoot.querySelector("div > eui-tabs > div:nth-child(2) > e-cnom-application-trace-session").shadowRoot.querySelector("div > e-cnom-start-application-trace").shadowRoot.querySelector("eui-flyout-panel > div > eui-accordion > e-cnom-lib-tree-view-widget").shadowRoot.querySelector("e-cnom-lib-tree-view").shadowRoot.querySelector("eui-tree > e-tree-view-item").shadowRoot.querySelector("li > span > div > span > eui-tooltip")';
+const nodeMTAS =
+  'document.querySelector("body > eui-container").shadowRoot.querySelector("main > div > div > div.content > e-application-trace").shadowRoot.querySelector("div > eui-tabs > div:nth-child(2) > e-cnom-application-trace-session").shadowRoot.querySelector("div > e-cnom-start-application-trace").shadowRoot.querySelector("eui-flyout-panel > div > eui-accordion > e-cnom-lib-tree-view-widget").shadowRoot.querySelector("e-cnom-lib-tree-view").shadowRoot.querySelector("eui-tree > e-tree-view-item > e-tree-view-item:nth-child(2)").shadowRoot.querySelector("li > span > div > span > eui-tooltip")';
+const customedNode =
+  'document.querySelector("body > eui-container").shadowRoot.querySelector("main > div > div > div.content > e-application-trace").shadowRoot.querySelector("div > eui-tabs > div:nth-child(2) > e-cnom-application-trace-session").shadowRoot.querySelector("div > e-cnom-start-application-trace").shadowRoot.querySelector("eui-flyout-panel > div > eui-accordion > e-cnom-lib-tree-view-widget").shadowRoot.querySelector("e-cnom-lib-tree-view").shadowRoot.querySelector("eui-tree > e-tree-view-item > e-tree-view-item:nth-child(2) > e-tree-view-item:nth-child(2)").shadowRoot.querySelector("li > span > div > span > eui-tooltip")';
+const sessionName =
+  'document.querySelector("body > eui-container").shadowRoot.querySelector("main > div > div > div.content > e-application-trace").shadowRoot.querySelector("div > eui-tabs > div:nth-child(2) > e-cnom-application-trace-session").shadowRoot.querySelector("div > e-cnom-start-application-trace").shadowRoot.querySelector("#session-name").shadowRoot.querySelector("#item")';
+const profile =
+  'document.querySelector("body > eui-container").shadowRoot.querySelector("main > div > div > div.content > e-application-trace").shadowRoot.querySelector("div > eui-tabs > div:nth-child(2) > e-cnom-application-trace-session").shadowRoot.querySelector("div > e-cnom-start-application-trace").shadowRoot.querySelector("#profile-name").shadowRoot.querySelector("div > eui-text-field").shadowRoot.querySelector("#item")';
+const profileItem =
+  'document.querySelector("body > eui-container").shadowRoot.querySelector("main > div > div > div.content > e-application-trace").shadowRoot.querySelector("div > eui-tabs > div:nth-child(2) > e-cnom-application-trace-session").shadowRoot.querySelector("div > e-cnom-start-application-trace").shadowRoot.querySelector("#profile-name").shadowRoot.querySelector("div > eui-menu > eui-menu-item:nth-child(1)").shadowRoot.querySelector("#label")';
+const btnStartInPanel =
+  'document.querySelector("body > eui-container").shadowRoot.querySelector("main > div > div > div.content > e-application-trace").shadowRoot.querySelector("div > eui-tabs > div:nth-child(2) > e-cnom-application-trace-session").shadowRoot.querySelector("div > e-cnom-start-application-trace").shadowRoot.querySelector("eui-flyout-panel > eui-button:nth-child(3)")';
+const btnContinue =
+  'document.querySelector("body > eui-container").shadowRoot.querySelector("main > div > div > div.content > e-application-trace").shadowRoot.querySelector("div > eui-tabs > div:nth-child(2) > e-cnom-application-trace-session").shadowRoot.querySelector("div > e-cnom-start-application-trace").shadowRoot.querySelector("#user-id-warning-dialog > eui-button")';
+
+const tickAll =
+  'document.querySelector("body > eui-container").shadowRoot.querySelector("main > div > div > div.content > e-application-trace").shadowRoot.querySelector("div > eui-tabs > div:nth-child(2) > e-cnom-application-trace-session").shadowRoot.querySelector("div > e-cnom-start-application-trace").shadowRoot.querySelector("#profile-name")';
+
+const taskList = [
+  () => fat.click(btnStart),
+  () => fat.click(nodeType),
+  () => fat.click(nodeMTAS),
+  () => fat.click(customedNode),
+  () => fat.input(sessionName, Date.now()),
+  () => fat.click(profileItem),
+  () => fat.click(btnStartInPanel),
+  () => fat.click(btnContinue),
+];
+
+const testthing = fat.action(taskList);
+```
