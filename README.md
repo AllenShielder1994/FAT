@@ -34,13 +34,6 @@ In daily testing work, testers often need to perform a large number of repetitiv
 
 The development of this testing platform aims to provide testers with an efficient and reliable tool. By using automated scripts to reduce repetitive tasks and improve test accuracy, this platform ultimately enhances the overall efficiency and quality of testing work. We welcome everyone to use the platform and provide feedback for further improvement and refinement.
 
-##### TODO List Phase 1
-
-- Release a usable basic version version beta 0.1
-- Improve the select method
-- Add the function of adding test report after completing the test
-- Publish all updates to code Repo (upgrade the version to beta 1.0 after the update is completed)
-
 ##### Example
 
 ```javascript
