@@ -1,32 +1,33 @@
 // ==UserScript==
 // @name        FAT
 // @namespace   Violentmonkey Scripts
-// @match       http://10.210.154.25:8080/*
+// @match       *://*/*
 // @grant       none
-// @version     1.0
-// @author      -
+// @version     1.1
+// @author      Allen Shielder
 // @description 8/16/2024, 1:07:21 PM
 // ==/UserScript==
 
 const util = {
   /**
-   * Get nested elements by dynamically generating code
-   * This is one of the basement function also
-   * @param {string} strElement - Selector chain string
-   * @returns {Element|null} - the element found or null
+   * Retrieve nested elements by dynamically generating code.
+   * This is a foundational function.
+   * @param {string} strElement - Selector chain string for the element.
+   * @returns {Element|null} - The found element or null if not found.
    */
   element(strElement) {
-    // Replace .shadowRoot in strings to handle multiple nested levels
-    const popableErrType = ["SyntaxError"];
+    const allowedErrors = ["SyntaxError"];
+    // Modify the selector chain to support shadow DOM traversal.
     let modifiedStrElement = strElement.replace(/\.shadowRoot/g, "?.shadowRoot");
     let objElement;
+
     try {
-      // Use eval to execute the modified string
+      // Use eval to evaluate the modified selector chain.
       objElement = eval(modifiedStrElement);
     } catch (err) {
-      const errString = String(err);
-      const errType = errString.split(":")[0];
-      if (popableErrType.includes(errType)) console.error(err);
+      if (allowedErrors.includes(err.name)) {
+        console.error(err);
+      }
     }
     return objElement;
   },
@@ -34,18 +35,19 @@ const util = {
 
 const fat = {
   /**
-   * @param {string} content - log content
-   * @param {string} color - the color of the text in content
+   * Log messages with optional colored output.
+   * @param {string} content - The message to log.
+   * @param {string|null} color - The color for the text, or null for default.
    */
   log(content, color = null) {
-    const definedColor = {
+    const definedColors = {
       red: "rgb(224, 108, 117)",
       green: "rgb(152, 195, 121)",
       blue: "rgb(97, 175, 239)",
     };
 
-    if (typeof color === "string") {
-      color = color.toLowerCase() in definedColor ? definedColor[color.toLowerCase()] : color.toLowerCase();
+    if (color && typeof color === "string") {
+      color = definedColors[color.toLowerCase()] || color.toLowerCase();
       console.info(`%c${content}`, `color: ${color}`);
     } else {
       console.info(content);
@@ -53,37 +55,38 @@ const fat = {
   },
 
   /**
-   * Open a new window to show the log or result.
-   * @param {string} title - title of the window and report
-   * @param {string} content - what report shows
+   * Open a new window to display a report.
+   * @param {string} title - Title of the report.
+   * @param {Array} content - Array of objects representing the report content.
+   * @returns {boolean} - True if successful, false otherwise.
    */
   async report(title, content) {
-    // open new window
     let newWindow = window.open("", "_blank", "width=600,height=750");
-    let reportContent = "";
+
     if (newWindow) {
+      let reportContent = "";
+
       content.forEach((obj) => {
-        const keys = Object.keys(obj);
         if (typeof obj !== "object") {
-          console.error("The member of the content should be key-value type.");
-          return false;
+          console.error("Content should be an object with key-value pairs.");
+          return;
         }
-        switch (keys[0].toLocaleLowerCase()) {
+
+        const keys = Object.keys(obj);
+        switch (keys[0].toLowerCase()) {
           case "pass":
-            reportContent = reportContent + fat.template.pass(obj.pass);
+            reportContent += fat.template.pass(obj.pass);
             break;
           case "fail":
-            reportContent = reportContent + fat.template.fail(obj.fail);
+            reportContent += fat.template.fail(obj.fail);
             break;
           default:
-            reportContent = reportContent + fat.template.default(obj[keys[0]]);
+            reportContent += fat.template.default(obj[keys[0]]);
             break;
         }
       });
 
-      // Insert HTML content
       newWindow.document.write(fat.template.report(title, reportContent));
-      // refresh new window
       newWindow.document.close();
       return true;
     } else {
@@ -93,34 +96,30 @@ const fat = {
   },
 
   /**
-   * Load the all log in one valuable
-   * @param {Array} contentList - the collector of the log
-   * @param {object} content - Format: {type: 'xxxxxxx'}
-   *                                    type in [pass, fail, default]
-   * @returns {boolean} - The flag of method
+   * Add a log entry to the content list.
+   * @param {Array} contentList - Array to collect log entries.
+   * @param {object} content - Log entry object with a type.
+   * @returns {boolean} - Always returns true.
    */
   async load(contentList, content) {
-    await contentList.push(content);
+    contentList.push(content);
     return true;
   },
 
   /**
-   * The progress pause in the configed time
-   * @param {string} element - JS path of element in the browser
-   * @param {number} [maxAttempts=60] - Maximum number of attempts (default is 100)
-   * @param {number} [interval=500] - Detection interval (milliseconds, default is 500)
-   * @returns {boolean} - The flag of method
+   * Wait until an element exists within a specified timeframe.
+   * @param {string} element - Selector chain string.
+   * @param {number} [maxAttempts=60] - Maximum number of attempts.
+   * @param {number} [interval=500] - Interval in milliseconds between attempts.
+   * @returns {Promise<Element|boolean>} - The found element or false if not found.
    */
   async exist(element, maxAttempts = 60, interval = 500) {
     let attempts = 0;
 
-    // Create a helper function that returns a Promise
-    function wait(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
-    }
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     while (attempts < maxAttempts) {
-      let targetElement = util.element(element);
+      const targetElement = util.element(element);
 
       if (targetElement) {
         return targetElement;
@@ -133,36 +132,29 @@ const fat = {
   },
 
   /**
-   * Starts polling to check if the target element exists and
-   * performs a click action if found
-   * @param {Function} element - Function used to get the target element
-   * @param {string} strElement - Selector chain string
-   * @param {number} [maxAttempts=100] - Maximum number of attempts (default is 100)
-   * @param {number} [interval=500] - Detection interval (milliseconds, default is 500)
-   * @returns {boolean} - The flag of method
+   * Poll for an element's existence and click it if found.
+   * @param {string} strElement - Selector chain string for the element.
+   * @param {number} [maxAttempts=100] - Maximum number of attempts.
+   * @param {number} [interval=500] - Interval in milliseconds between attempts.
+   * @returns {Promise<boolean>} - True if the element was clicked, false otherwise.
    */
-
   async click(strElement, maxAttempts = 100, interval = 500) {
     let attempts = 0;
 
-    // Create a helper function that returns a Promise
-    function wait(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
-    }
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     while (attempts < maxAttempts) {
-      let targetElement = util.element(strElement);
+      const targetElement = util.element(strElement);
 
       if (targetElement) {
-        fat.log("Elements were reached and ready to click", "green");
+        fat.log("Element found and ready to click", "green");
         targetElement.click();
-        const event = new Event("change", { bubbles: true });
-        targetElement.dispatchEvent(event);
-        return true; // Exit the function after successfully finding the element
+        targetElement.dispatchEvent(new Event("change", { bubbles: true }));
+        return true;
       } else {
         attempts++;
-        fat.log(`Attempting to reach elements: ${attempts}/${maxAttempts}`);
-        await wait(interval); // Wait for the specified time before continuing to poll
+        fat.log(`Attempting to find element: ${attempts}/${maxAttempts}`);
+        await wait(interval);
       }
     }
 
@@ -171,37 +163,31 @@ const fat = {
   },
 
   /**
-   * Starts polling to check if the target element exists
-   * and performs input operations if found
-   * @param {Function} element - Function used to get the target element
-   * @param {string} strElement - Selector chain string
-   * @param {number} [textContent] - Input content
-   * @param {number} [maxAttempts=100] - Maximum number of attempts (default is 100)
-   * @param {number} [interval=500] - Detection interval (milliseconds, default is 500)
-   * @returns {boolean} - The flag of method
+   * Poll for an element's existence and input text if found.
+   * @param {string} strElement - Selector chain string for the element.
+   * @param {string} textContent - The text content to input.
+   * @param {number} [maxAttempts=100] - Maximum number of attempts.
+   * @param {number} [interval=500] - Interval in milliseconds between attempts.
+   * @returns {Promise<boolean>} - True if the text was inputted, false otherwise.
    */
   async input(strElement, textContent, maxAttempts = 100, interval = 500) {
     let attempts = 0;
 
-    // Create a helper function that returns a Promise
-    function wait(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
-    }
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     while (attempts < maxAttempts) {
-      let targetElement = util.element(strElement);
+      const targetElement = util.element(strElement);
 
       if (targetElement) {
-        fat.log("Elements were reached and ready to click", "green");
+        fat.log("Element found and ready for input", "green");
         targetElement.value = textContent;
         targetElement.dispatchEvent(new Event("input", { bubbles: true }));
         targetElement.dispatchEvent(new Event("change", { bubbles: true }));
-
-        return true; // Exit the function after successfully finding the element
+        return true;
       } else {
         attempts++;
-        fat.log(`Attempting to reach elements: ${attempts}/${maxAttempts}`);
-        await wait(interval); // Wait for the specified time before continuing to poll
+        fat.log(`Attempting to find element: ${attempts}/${maxAttempts}`);
+        await wait(interval);
       }
     }
 
@@ -210,45 +196,40 @@ const fat = {
   },
 
   /**
-   * The progress pause in the configed time
-   * @param {number} [time] - the stop time you hope
-   * @param {string} strElement - unit of the time. The default unit is ms
-   * @returns {boolean} - The flag of method
+   * Pause execution for a specified duration.
+   * @param {number} time - The duration to pause.
+   * @param {string} [unit="ms"] - Time unit (ms, s, m, h).
+   * @returns {Promise<boolean>} - Always returns true.
    */
   async stop(time, unit = "ms") {
     if (typeof time !== "number") {
-      console.error("The time should be number type only.");
+      console.error("Time must be a number.");
       return false;
     }
 
-    switch (unit) {
-      case "s":
-        unit = 1000;
-        break;
-      case "m":
-        unit = 1000 * 60;
-        break;
-      case "h":
-        unit = 1000 * 60 * 60;
-        break;
-      default:
-        unit = 1;
-    }
-    fat.log("Step waiting " + (time * unit) / 1000 + " s...");
-    await new Promise((resolve) => setTimeout(resolve, time * unit));
+    const units = {
+      ms: 1,
+      s: 1000,
+      m: 60000,
+      h: 3600000,
+    };
+
+    const duration = time * (units[unit] || units.ms);
+    fat.log(`Pausing for ${duration / 1000} seconds...`);
+    await new Promise((resolve) => setTimeout(resolve, duration));
     return true;
   },
 
   /**
-   * Used to build more complex front-end actions
-   * @param {Array[Function]} actionList - the list of function
-   * @returns {boolean} - The flag of method
+   * Execute a series of asynchronous actions sequentially.
+   * @param {Array<Function>} actionList - List of functions to execute.
+   * @returns {Promise<boolean>} - True if all actions succeed, false if any fail.
    */
   async action(actionList) {
-    for (let func of actionList) {
+    for (const func of actionList) {
       const result = await func();
       if (result !== true) {
-        console.error("Function did not return true:", func.name);
+        console.error(`Function did not return true: ${func.name}`);
         return false;
       }
     }
@@ -256,23 +237,26 @@ const fat = {
   },
 
   /**
-   * Tasks in work flow can launch in order and get the previous status
-   * @param {Array[Function]} actionList - the list of function
-   * @returns {boolean} - The flag of method
+   * Execute a series of actions in a flow, tracking the status of each.
+   * @param {Array<Function>} actionList - List of functions to execute.
+   * @returns {Promise<boolean>} - Always returns true.
    */
   async flow(actionList) {
     let status = "init";
-    for (let func of actionList) {
+    for (const func of actionList) {
       const result = await func(status);
-      status = true;
-      if (result !== true) {
-        status = false;
-      }
+      status = result === true;
     }
     return true;
   },
 
   template: {
+    /**
+     * Generate the HTML template for a report.
+     * @param {string} title - The title of the report.
+     * @param {string} content - The HTML content of the report.
+     * @returns {string} - The complete HTML string for the report.
+     */
     report(title, content) {
       return `
       <!DOCTYPE html>
@@ -306,12 +290,27 @@ const fat = {
       </html>
     `;
     },
+    /**
+     * Generate the HTML template for a "pass" message.
+     * @param {string} content - The content of the "pass" message.
+     * @returns {string} - The HTML string for the "pass" message.
+     */
     pass(content) {
       return `<h4 class="pass">✓ ${content}</h4>`;
     },
+    /**
+     * Generate the HTML template for a "fail" message.
+     * @param {string} content - The content of the "fail" message.
+     * @returns {string} - The HTML string for the "fail" message.
+     */
     fail(content) {
       return `<h4 class="fail">✗ ${content}</h4>`;
     },
+    /**
+     * Generate the default HTML template for a message.
+     * @param {string} content - The content of the message.
+     * @returns {string} - The HTML string for the message.
+     */
     default(content) {
       return `<h4>${content}</h4>`;
     },
