@@ -132,6 +132,43 @@ const fat = {
   },
 
   /**
+   * Poll for an element's existence and set attribute.
+   * @param {string} strElement - Selector chain string for the element.
+   * @param {string} propName - The name of the element property.
+   * @param {string} propValue - The value of the element property.
+   * @param {string} eventType - Type of event such as 'change', 'click' and etc
+   * @param {number} [maxAttempts=100] - Maximum number of attempts.
+   * @param {number} [interval=500] - Interval in milliseconds between attempts.
+   * @returns {Promise<boolean>} - True if the element was clicked, false otherwise.
+   */
+  async set(strElement, propName, propValue, eventType = "change", maxAttempts = 100, interval = 500) {
+    let attempts = 0;
+    function wait(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    while (attempts < maxAttempts) {
+      let targetElement = util.element(strElement);
+
+      if (targetElement) {
+        fat.log("Elements were reached and ready to set", "green");
+        targetElement.setAttribute(propName, propValue);
+        const event = new Event(eventType, { bubbles: true });
+        targetElement.dispatchEvent(event);
+
+        return true;
+      } else {
+        attempts++;
+        fat.log(`Attempting to reach elements: ${attempts}/${maxAttempts}`);
+        await wait(interval);
+      }
+    }
+
+    fat.log("Maximum number of attempts exceeded", "red");
+    return false;
+  },
+
+  /**
    * Poll for an element's existence and click it if found.
    * @param {string} strElement - Selector chain string for the element.
    * @param {number} [maxAttempts=100] - Maximum number of attempts.
@@ -187,6 +224,48 @@ const fat = {
       } else {
         attempts++;
         fat.log(`Attempting to find element: ${attempts}/${maxAttempts}`);
+        await wait(interval);
+      }
+    }
+
+    fat.log("Maximum number of attempts exceeded", "red");
+    return false;
+  },
+
+  /**
+   * Poll for an element's existence and select.
+   * @param {string} strElement - Selector chain string for the element.
+   * @param {string} option - The option items in the selection.
+   * @param {string} prop - Could be value, text, innerHTML etc.
+   * @param {number} [maxAttempts=100] - Maximum number of attempts.
+   * @param {number} [interval=500] - Interval in milliseconds between attempts.
+   * @returns {Promise<boolean>} - True if the text was inputted, false otherwise.
+   */
+  async select(strElement, option, prop = "text", maxAttempts = 100, interval = 500) {
+    let attempts = 0;
+    function wait(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    while (attempts < maxAttempts) {
+      let targetElement = util.element(strElement);
+
+      if (targetElement) {
+        fat.log("Elements were reached and ready to select", "green");
+        const options = targetElement.options;
+        for (let i = 0; i < options.length; i++) {
+          if (options[i][prop] === option) {
+            // set option
+            targetElement.selectedIndex = i;
+            const event = new Event("change", { bubbles: true });
+            targetElement.dispatchEvent(event);
+
+            return true;
+          }
+        }
+      } else {
+        attempts++;
+        fat.log(`Attempting to reach elements: ${attempts}/${maxAttempts}`);
         await wait(interval);
       }
     }
