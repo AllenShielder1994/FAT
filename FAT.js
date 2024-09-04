@@ -3,7 +3,7 @@
 // @namespace   Violentmonkey Scripts
 // @match       *://*/*
 // @grant       none
-// @version     1.1
+// @version     1.3
 // @author      Allen Shielder
 // @description 8/16/2024, 1:07:21 PM
 // ==/UserScript==
@@ -436,4 +436,10 @@ const fat = {
       },
     },
   },
+  where: window.location,
+  url: window.location.href,
+  host: window.location.host,
+  origin: window.location.origin,
+  protocol: window.location.protocol,
+  path: window.location.pathname,
 };
