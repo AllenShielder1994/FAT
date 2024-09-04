@@ -394,4 +394,46 @@ const fat = {
       return `<h4>${content}</h4>`;
     },
   },
+
+  mail: {
+    elastic: {
+      _capitalizeKeys: function (obj) {
+        return Object.keys(obj).reduce((result, key) => {
+          result[key.charAt(0).toUpperCase() + key.slice(1).toLowerCase()] = obj[key];
+          return result;
+        }, {});
+      },
+      send: function (x) {
+        const a = this._capitalizeKeys(x);
+        return new Promise(function (n, e) {
+          (a.nocache = Math.floor(1e6 * Math.random() + 1)), (a.Action = "Send");
+          let t = JSON.stringify(a);
+          fat.mail.elastic.ajaxPost("https://smtpjs.com/v3/smtpjs.aspx?", t, function (e) {
+            n(e);
+          });
+        });
+      },
+      ajaxPost: function (e, n, t) {
+        let a = fat.mail.elastic.createCORSRequest("POST", e);
+        a.setRequestHeader("Content-type", "application/x-www-form-urlencoded"),
+          (a.onload = function () {
+            let e = a.responseText;
+            null != t && t(e);
+          }),
+          a.send(n);
+      },
+      ajax: function (e, n) {
+        let t = fat.mail.elastic.createCORSRequest("GET", e);
+        (t.onload = function () {
+          let e = t.responseText;
+          null != n && n(e);
+        }),
+          t.send();
+      },
+      createCORSRequest: function (e, n) {
+        let t = new XMLHttpRequest();
+        return "withCredentials" in t ? t.open(e, n, !0) : "undefined" != typeof XDomainRequest ? (t = new XDomainRequest()).open(e, n) : (t = null), t;
+      },
+    },
+  },
 };
